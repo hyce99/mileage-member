@@ -448,13 +448,13 @@ hystrix:
 
 -  서비스에 대한 replica 를 동적으로 늘려주도록 HPA 를 설정한다. 설정은 CPU 사용량이 4프로를 넘어서면 replica 를 10개까지 늘려준다:
 ```
-kubectl autoscale deploy point --min=1 --max=10 --cpu-percent=4
+kubectl autoscale deploy member --min=1 --max=10 --cpu-percent=4
 ```
-![image](https://user-images.githubusercontent.com/73006747/96672038-434fdd00-139e-11eb-8962-c1d46814f24d.png)
+![image](https://user-images.githubusercontent.com/70302890/96828746-2507e100-1473-11eb-8bb7-6d3f13396d70.png)
 
 - CB 에서 했던 방식대로 워크로드를 걸어준다.
 ```
-$ siege -c3 -t10S -r10 --content-type "application/json" 'http://localhost:8080/members POST {"memberStatus": "READY"}',{"phoneNo": "01000000000"}',{"nickname": "A"}'
+$ siege -c1 -t5S -v --content-type "application/json" 'http://dormantmember:8080/dormantMembers PATCH {"memberStatus":"CREAR"}'
 ```
 - 오토스케일이 어떻게 되고 있는지 모니터링을 걸어둔다:
 ```
@@ -462,7 +462,7 @@ kubectl get deploy point -w -n tutorial
 ```
 - 어느정도 시간이 흐른 후 스케일 아웃이 벌어지는 것을 확인할 수 있다:
 
-![image](https://user-images.githubusercontent.com/73006747/96671955-08e64000-139e-11eb-905d-6232daccfaab.png)
+![image](https://user-images.githubusercontent.com/70302890/96829053-c0995180-1473-11eb-8cb8-bb919bb1c453.png)
 
 
 
