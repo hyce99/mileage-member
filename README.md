@@ -468,8 +468,6 @@ kubectl get deploy member -w
 
 ## 무정지 재배포
 
-* 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
-
 - seige 로 배포작업 직전에 워크로드를 모니터링 함.
 ```
 $ siege -c3 -t100S -v --content-type "application/json" 'http://member:8080/members POST {"phoneNo": "01085580000", "nickname":"SEQ1" ,"memberStatus":"READY"}'
@@ -477,9 +475,6 @@ $ siege -c3 -t100S -v --content-type "application/json" 'http://member:8080/memb
 ```
 
 - 새버전으로의 배포 시작
-```
-kubectl set image ...
-```
 
 - seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
 
