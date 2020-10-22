@@ -478,7 +478,7 @@ $ siege -c3 -t100S -v --content-type "application/json" 'http://member:8080/memb
 
 - seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
 
-![image](https://user-images.githubusercontent.com/70302890/96830527-841b2500-1476-11eb-8d0e-ba88f367836a.png)
+![image](https://user-images.githubusercontent.com/70302890/96831736-8bdbc900-1478-11eb-9f71-5f29d1c1f12b.png)
 
 배포기간중 Availability 가 평소 100%에서 80% 대로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행한 것이기 때문. 이를 막기위해 Readiness Probe 를 설정함:
 
