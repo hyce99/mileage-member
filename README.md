@@ -484,9 +484,6 @@ $ siege -c3 -t100S -v --content-type "application/json" 'http://member:8080/memb
 - seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
 
 
-![image](https://user-images.githubusercontent.com/70302890/96831968-f42aaa80-1478-11eb-9bd8-7553872a11a1.png)
-
-
 배포기간중 Availability 가 평소 100%에서 80% 대로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행한 것이기 때문. 이를 막기위해 Readiness Probe 를 설정함:
 
 ```
@@ -505,6 +502,14 @@ kubectl apply -f kubernetes/deployment.yaml
 
 
 배포기간 동안 Availability 가 변화없기 때문에 무정지 재배포가 성공한 것으로 확인됨.
+
+Readiness Probe
+
+![image](https://user-images.githubusercontent.com/70302890/96834067-5507b200-147c-11eb-8bd0-0b86cffd1b45.png)
+
+![image](https://user-images.githubusercontent.com/70302890/96833989-373a4d00-147c-11eb-97d1-dd93f1190916.png)
+
+
 
 # 시나리오 수행 결과
 
