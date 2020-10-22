@@ -298,9 +298,11 @@ public interface MemberService {
 #휴면해제 처리
 http PATCH http://localhost:8082//dormantMembers/1 memberStatus=CLEAR   #Fail
 
+```
 ![image](https://user-images.githubusercontent.com/70302890/96826336-1ff46300-146e-11eb-9498-0a07f415fb4f.png)
 
 
+```
 #회원서비스 재기동
 cd member
 mvn spring-boot:run
@@ -308,6 +310,7 @@ mvn spring-boot:run
 #휴면해제 처리
 http PATCH http://localhost:8082//dormantMembers/1 memberStatus=CLEAR   #Success
 
+```
 ![image](https://user-images.githubusercontent.com/70302890/96826457-5d58f080-146e-11eb-8ef4-45c5dea48491.png)
 
 ```
@@ -324,6 +327,8 @@ http PATCH http://localhost:8082//dormantMembers/1 memberStatus=CLEAR   #Success
  
 - 이를 위하여 회원휴면 처리 후 기록을 남긴 후에 곧바로 회원 휴면처리 이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
  
+```
+
 ```
 package mileage;
 
@@ -477,8 +482,10 @@ $ siege -c3 -t100S -v --content-type "application/json" 'http://member:8080/memb
 - 새버전으로의 배포 시작
 
 - seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
-```
+
+
 ![image](https://user-images.githubusercontent.com/70302890/96831968-f42aaa80-1478-11eb-9bd8-7553872a11a1.png)
+
 
 배포기간중 Availability 가 평소 100%에서 80% 대로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행한 것이기 때문. 이를 막기위해 Readiness Probe 를 설정함:
 
@@ -509,13 +516,22 @@ kubectl apply -f kubernetes/deployment.yaml
 ```
 http POST http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers phoneNo=1234567 nickname=DOR-Saga memberStatus=Pre-Dormant memberId=1
 
+```
 ![image](https://user-images.githubusercontent.com/70302890/96830624-b0cf3c80-1476-11eb-970a-12baa554d9cd.png)
+
+```
 
 http PATCH http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080//dormantMembers/1 memberStatus=DORMANT
 
+```
+
 ![image](https://user-images.githubusercontent.com/70302890/96830662-c3e20c80-1476-11eb-8ec6-5dc4b1abafd1.png)
 
+```
+
 http GET http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers/1
+
+```
 
 ![image](https://user-images.githubusercontent.com/70302890/96830701-d2302880-1476-11eb-8d8d-0d59e99fe037.png)
 
@@ -523,42 +539,48 @@ http GET http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.a
 
 (시나리오 2) 휴면대상회원 등록하기 (상태 : Pre-Dormant 로 신규 등록 됨)
 
-```
+
 http POST http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers phoneNo=01052995000 nickname=DOR1 memberStatus=Pre-Dormant memberId=2
+```
 
 ![image](https://user-images.githubusercontent.com/70302890/96830791-effd8d80-1476-11eb-935d-80163641025c.png)
 
-
+```
 http GET http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers/2
 
+```
 ![image](https://user-images.githubusercontent.com/70302890/96830832-fee44000-1476-11eb-9342-22df1817b7e2.png)
 
-```
+
 (시나리오 3) 관리자가 휴면상태로 변경 (상태 : DORMANT 로 변경되고, 회원에게 메시지를 전송함 - 비동기 호출)
 
 ```
 http PATCH http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers/2 memberStatus=DORMANT 
 
+```
 ![image](https://user-images.githubusercontent.com/70302890/96830876-13283d00-1477-11eb-9d18-934afa31b0bb.png)
 
+```
 http GET http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/managerMessages/2
 
+```
 ![image](https://user-images.githubusercontent.com/70302890/96830918-21765900-1477-11eb-8313-29ff695321ab.png)
 
-```
 
 (시나리오 4) 회원이 휴면 해제(CLEAR) 요청 시 회원상태를 'READY'로 변경 후 회원의 신규 회원 등록 처리함. (동기)
 
 ```
 http PATCH http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers/2 memberStatus=CLEAR
 
-![image](https://user-images.githubusercontent.com/70302890/96830988-381cb000-1477-11eb-9ddd-3c0f338e5109.png)
 ```
+![image](https://user-images.githubusercontent.com/70302890/96830988-381cb000-1477-11eb-9ddd-3c0f338e5109.png)
+
 
 (시나리오 5) 관리자 화면에서 휴면회원 내역 조회 (CQRS)
 
 ```
 http GET http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/managerpages/
+```
 ![image](https://user-images.githubusercontent.com/70302890/96831118-6f8b5c80-1477-11eb-8b64-707dcc3c79d4.png)
 ```
 
