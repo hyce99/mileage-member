@@ -503,7 +503,7 @@ kubectl apply -f kubernetes/deployment.yaml
 
 배포기간 동안 Availability 가 변화없기 때문에 무정지 재배포가 성공한 것으로 확인됨.
 
-Readiness Probe
+liveness Probe
 
 ![image](https://user-images.githubusercontent.com/70302890/96834067-5507b200-147c-11eb-8bd0-0b86cffd1b45.png)
 
