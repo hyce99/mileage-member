@@ -452,13 +452,13 @@ kubectl autoscale deploy member --min=1 --max=10 --cpu-percent=4
 ```
 ![image](https://user-images.githubusercontent.com/70302890/96828746-2507e100-1473-11eb-8bb7-6d3f13396d70.png)
 
-- CB 에서 했던 방식대로 워크로드를 걸어준다.
+- CB 에서 했던 방식대로 워크로드를 걸어준다. (2명, 10초)
 ```
-$ siege -c1 -t5S -v --content-type "application/json" 'http://dormantmember:8080/dormantMembers PATCH {"memberStatus":"CREAR"}'
+$ siege -c2 -t10S -v --content-type "application/json" 'http://dormantmember:8080/dormantMembers PATCH {"memberStatus":"CREAR"}'
 ```
 - 오토스케일이 어떻게 되고 있는지 모니터링을 걸어둔다:
 ```
-kubectl get deploy point -w -n tutorial
+kubectl get deploy member -w
 ```
 - 어느정도 시간이 흐른 후 스케일 아웃이 벌어지는 것을 확인할 수 있다:
 
@@ -483,20 +483,21 @@ kubectl set image ...
 
 - seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
 
-![image](https://user-images.githubusercontent.com/73006747/96672363-0f28ec00-139f-11eb-8c71-5c919f3383ea.png)
+![image](https://user-images.githubusercontent.com/70302890/96830527-841b2500-1476-11eb-8d0e-ba88f367836a.png)
 
-배포기간중 Availability 가 평소 100%에서 60% 대로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행한 것이기 때문. 이를 막기위해 Readiness Probe 를 설정함:
+배포기간중 Availability 가 평소 100%에서 80% 대로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행한 것이기 때문. 이를 막기위해 Readiness Probe 를 설정함:
 
 ```
 # deployment.yaml 의 readiness probe 의 설정:
 
+![image](https://user-images.githubusercontent.com/70302890/96830364-4f0ed280-1476-11eb-9a38-75468b980ae2.png)
 
 kubectl apply -f kubernetes/deployment.yaml
 ```
 
 - 동일한 시나리오로 재배포 한 후 Availability 확인:
 
-![image](https://user-images.githubusercontent.com/73006747/96672395-28319d00-139f-11eb-9382-5720c9b258bf.png)
+![image](https://user-images.githubusercontent.com/70302890/96830083-c728c880-1475-11eb-8145-098f85345df5.png)
 
 
 배포기간 동안 Availability 가 변화없기 때문에 무정지 재배포가 성공한 것으로 확인됨.
@@ -505,9 +506,64 @@ kubectl apply -f kubernetes/deployment.yaml
 
 * AWS 서비스 기동 확인
 
+
+(시나리오 1) 휴면대상으로 등록된 회원을 관리자가 휴면으로 변경 시 회원에게 휴대폰 알림 발송이 오류가 난 경우 → 회원의 상태를 파기 (DESTRUCTION)로 변경함 (saga)
+
+```
+http POST http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers phoneNo=1234567 nickname=DOR-Saga memberStatus=Pre-Dormant memberId=1
+
+![image](https://user-images.githubusercontent.com/70302890/96830624-b0cf3c80-1476-11eb-970a-12baa554d9cd.png)
+
+http PATCH http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080//dormantMembers/1 memberStatus=DORMANT
+
+![image](https://user-images.githubusercontent.com/70302890/96830662-c3e20c80-1476-11eb-8ec6-5dc4b1abafd1.png)
+
+http GET http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers/1
+
+![image](https://user-images.githubusercontent.com/70302890/96830701-d2302880-1476-11eb-8d8d-0d59e99fe037.png)
+
 ```
 
+(시나리오 2) 휴면대상회원 등록하기 (상태 : Pre-Dormant 로 신규 등록 됨)
 
+```
+http POST http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers phoneNo=01052995000 nickname=DOR1 memberStatus=Pre-Dormant memberId=2
+
+![image](https://user-images.githubusercontent.com/70302890/96830791-effd8d80-1476-11eb-935d-80163641025c.png)
+
+
+http GET http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers/2
+
+![image](https://user-images.githubusercontent.com/70302890/96830832-fee44000-1476-11eb-9342-22df1817b7e2.png)
+
+```
+(시나리오 3) 관리자가 휴면상태로 변경 (상태 : DORMANT 로 변경되고, 회원에게 메시지를 전송함 - 비동기 호출)
+
+```
+http PATCH http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers/2 memberStatus=DORMANT 
+
+![image](https://user-images.githubusercontent.com/70302890/96830876-13283d00-1477-11eb-9d18-934afa31b0bb.png)
+
+http GET http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/managerMessages/2
+
+![image](https://user-images.githubusercontent.com/70302890/96830918-21765900-1477-11eb-8313-29ff695321ab.png)
+
+```
+
+(시나리오 4) 회원이 휴면 해제(CLEAR) 요청 시 회원상태를 'READY'로 변경 후 회원의 신규 회원 등록 처리함. (동기)
+
+```
+http PATCH http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/dormantMembers/2 memberStatus=CLEAR
+
+![image](https://user-images.githubusercontent.com/70302890/96830988-381cb000-1477-11eb-9ddd-3c0f338e5109.png)
+```
+
+(시나리오 5) 관리자 화면에서 휴면회원 내역 조회 (CQRS)
+
+```
+http GET http://a8f9c6d333ec14e2daef4bede64caa2b-1593742903.ap-southeast-2.elb.amazonaws.com:8080/managerpages/
+![image](https://user-images.githubusercontent.com/70302890/96831118-6f8b5c80-1477-11eb-8b64-707dcc3c79d4.png)
+```
 
 
 
