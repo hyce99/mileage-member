@@ -47,70 +47,14 @@
     1. 회원이 휴면이 될때 알림을 줄 수 있다. (Event driven)
 
 # 분석/설계
-
-
-### 이벤트 도출
-
-![image](https://user-images.githubusercontent.com/70302890/96823217-f552dc00-1466-11eb-9489-4c0b9085c722.png)
-
-### 부적격 이벤트 탈락
-
-![image](https://user-images.githubusercontent.com/73006747/96579007-16a1b400-1311-11eb-9d89-b556db3164fd.png)
-
-    -과정 중 도출된 잘못된 도메인 이벤트들을 걸러내는 작업을 수행함 
-      - 회원>회원정보 변경됨 : 회원상태 변경에 대한 시나리오가 분리되어 있고, 회원정보 변경에 대한 업무가 별도 존재하지 않아 제외
-      - 포인트 > 잔여포인트가 변경됨 : 포인트 적립/사용 이벤트 시 잔여포인트가 변경됨으로 제외
-      - 회원 가입 >회원 가입 메뉴 선택됨 : UI 의 이벤트이지, 업무적인 의미의 이벤트가 아니라서 제외 
-
-
-### 액터, 커맨드 부착하여 읽기 좋게
-
-![image](https://user-images.githubusercontent.com/73006747/96579141-54064180-1311-11eb-9122-e48e36fc91ec.png)
-
-
-### 어그리게잇으로 묶기
-
-![image](https://user-images.githubusercontent.com/73006747/96579185-641e2100-1311-11eb-8ea8-95504c9f0152.png)
-
-
-### 바운디드 컨텍스트로 묶기
-
-![image](https://user-images.githubusercontent.com/73006747/96579272-8b74ee00-1311-11eb-8ac3-030f4cbc7fe1.png)
-
-
-### 폴리시의 이동과 컨텍스트 매핑 (점선은 Pub/Sub, 실선은 Req/Resp)
-
-![image](https://user-images.githubusercontent.com/73006747/96579391-bd865000-1311-11eb-9d6f-69ca157f0ce4.png)
-
-
-### 완성된 1차 모형
-
-![image](https://user-images.githubusercontent.com/73006747/96579532-fa524700-1311-11eb-8129-5c68f58ae595.png)
-
-
-### 1차 완성본에 대한 기능적/비기능적 요구사항을 커버하는지 검증 및 수정
-
-![image](https://user-images.githubusercontent.com/73006747/96579965-8ebca980-1312-11eb-98f5-a9f17b5c8828.png)
-
-    - 시나리오 중 
-      회원은 포인트를 적립/사용이 가능하며, 잔여포인트가 관리된다. 이때, 회원상태가 정상인 경우만 적립/사용이 가능하다. (기능 누락) 
-      → 변경 필요로 모델 
-      
+     
 ## Event Storming 결과
 * MSAEz 로 모델링한 이벤트스토밍 결과
-![image](https://user-images.githubusercontent.com/73006747/96578872-dfcb9e00-1310-11eb-9f23-35cabe3d01c1.png)
+![image](https://user-images.githubusercontent.com/70302890/96823217-f552dc00-1466-11eb-9489-4c0b9085c722.png)
+
     
 
-## 헥사고날 아키텍처 다이어그램 도출
-    
-![image](https://user-images.githubusercontent.com/73006747/96580722-ad6f7000-1313-11eb-9d5c-2c81c49c6c97.png)
-
-
-    - Chris Richardson, MSA Patterns 참고하여 Inbound adaptor와 Outbound adaptor를 구분함
-    - 호출관계에서 PubSub 과 Req/Resp 를 구분함
-    - 서브 도메인과 바운디드 컨텍스트의 분리:  각 팀의 KPI 별로 아래와 같이 관심 구현 스토리를 나눠가짐
-
-
+#
 # 구현:
 
 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 스프링부트로 구현하였다. 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 808n 이다)
@@ -119,13 +63,16 @@
 cd member
 mvn spring-boot:run
 
-cd message
+cd dormantmember
 mvn spring-boot:run 
 
-cd point
+cd managerMessage
 mvn spring-boot:run  
 
-cd mypage
+cd managerpage
+mvn spring-boot:run 
+
+cd gatewqy
 mvn spring-boot:run 
 ```
 
@@ -136,21 +83,17 @@ mvn spring-boot:run
 ```
 package mileage;
 
-import javax.persistence.*;
-import org.springframework.beans.BeanUtils;
-import java.util.List;
-
 @Entity
-@Table(name="Member_table")
-public class Member {
+@Table(name = "DormantMember_table")
+public class DormantMember {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private Long memberId;
     private String phoneNo;
-    private String nickname;
     private String memberStatus;
+    private String nickname;
 
 
     public Long getId() {
@@ -160,6 +103,7 @@ public class Member {
     public void setId(Long id) {
         this.id = id;
     }
+
     public Long getMemberId() {
         return memberId;
     }
@@ -167,6 +111,7 @@ public class Member {
     public void setMemberId(Long memberId) {
         this.memberId = memberId;
     }
+
     public String getPhoneNo() {
         return phoneNo;
     }
@@ -174,13 +119,7 @@ public class Member {
     public void setPhoneNo(String phoneNo) {
         this.phoneNo = phoneNo;
     }
-    public String getNickname() {
-        return nickname;
-    }
 
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
-    }
     public String getMemberStatus() {
         return memberStatus;
     }
@@ -188,6 +127,15 @@ public class Member {
     public void setMemberStatus(String memberStatus) {
         this.memberStatus = memberStatus;
     }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
 }
 
 
@@ -199,21 +147,21 @@ package mileage;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import java.util.Optional;
 
-public interface MessageRepository extends PagingAndSortingRepository<Message, Long>{
-    Optional<Message> findByMemberId(Long memberId);
+public interface ManagerMessageRepository extends PagingAndSortingRepository<ManagerMessage, Long>{
+    Optional<ManagerMessage> findByMemberId(Long memberId);
 
 }
 ```
 - 적용 후 REST API 의 테스트
 ```
-# member 신규 가입
-http POST http://localhost:8081/members phoneNo=01012341234 nickname=TEST memberStatus=READY memberId=99
+# dormantmember 휴면대상회원 등록하기 (상태 : Pre-Dormant 로 신규 등록 됨)
+http POST http://localhost:8082//dormantMembers phoneNo=01085581234 nickname=DOR1 memberStatus=Pre-Dormant memberId=2
 
-# member 회원 탈퇴처리
-http DELETE http://localhost:8081/members/2
+# dormantmember 휴면대상회원 변경하기
+http PATCH http://localhost:8082//dormantMembers/1 memberStatus=DORMANT
 
-# point 정보 확인
-http GET http://localhost:8083/points/1 
+# managerpages 관리자 화면에서 휴면회원 내역 조회
+http GET http://localhost:8084/managerpages/1 
 
 ```
 
@@ -224,13 +172,14 @@ http GET http://localhost:8083/points/1
 이를 위해 aws의 RDS로 mariaDB를 생성하였고, application.yml 파일과 pom.xml에 maria DB관련 코드를 추가하였다.
 
 ```
-# Message.java
+# ManagerMessage.java
 
 package mileage;
 
+
 @Entity
-@Table(name="Message_table")
-public class Message {
+@Table(name="ManagerMessage_table")
+public class ManagerMessage {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY) // mariadb를 사용하여 db에서 auto_increment 속성을 사용하여 GenerationType.IDENTITY으로 설정
@@ -239,17 +188,18 @@ public class Message {
     private String phoneNo;
     private String messageContents;
     private String messageStatus;
+    private String memberStatus;
 
 }
 
 
-# MessageRepository.java
+# ManagerMessageRepository.java
 package mileage;
 
-public interface MessageRepository extends PagingAndSortingRepository<Message, Long>{
-    Optional<Message> findByMemberId(Long memberId);
-}
+public interface ManagerMessageRepository extends PagingAndSortingRepository<ManagerMessage, Long>{
+    Optional<ManagerMessage> findByMemberId(Long memberId);
 
+}
 # application.yml
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
@@ -283,52 +233,60 @@ public interface MessageRepository extends PagingAndSortingRepository<Message, L
   </dependency>
     
 ```
-- AWS에 업로드된 mariaDB 접속 정보
-![poly2](https://user-images.githubusercontent.com/73006747/96671984-20252d80-139e-11eb-9e13-a5586a5ac226.PNG)
-
-- AWS에 업로드된 mariaDB 내 데이터 확인
-![poly](https://user-images.githubusercontent.com/73006747/96671982-1ef40080-139e-11eb-8d2a-af86576aad6c.PNG)
-
-## 폴리글랏 프로그래밍
 
 ## 동기식 호출 과 Fallback 처리
 
-분석단계에서의 조건 중 하나로 회원 탈퇴(member)-> 포인트 소멸(point) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
+분석단계에서의 조건 중 하나로 휴면 해제 시 신규 회원가입 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
 
 - 포인트서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
 
 ```
-# (member) PointService.java
+# (member) MemberService.java
 
 package mileage.external;
 
-@FeignClient(name="point", url="${api.point.url}")
-public interface PointService {
+@FeignClient(name="member", url="${api.member.url}")
+public interface MemberService {
 
-    @RequestMapping(method= RequestMethod.DELETE, path="/points/{id}")
-    public void forfeit(@RequestBody Point point, @PathVariable Long id);
+    @RequestMapping(method= RequestMethod.POST, path="/members")
+    public void join(@RequestBody Member member);
 
 }
 ```
 
-- 회원 탈퇴를 받은 직후(@PreRemove) 포인트를 요청하도록 처리
+- 휴면해제를 받은 직후(@PreRemove) 신규회원 가입을 선 처리하도록 요청하도록 처리
 ```
-# Member.java (Entity)
+# DormantMember.java (Entity)
 
-    @PreRemove
-    public void onPreRemove(){
-        MemberWithdrawn memberWithdrawn = new MemberWithdrawn();
-        BeanUtils.copyProperties(this, memberWithdrawn);
-        memberWithdrawn.setMemberStatus("WITHDRAWAL");
-        memberWithdrawn.publishAfterCommit();
+@PreUpdate
+    public void onPreUpdate() {
 
-        mileage.external.Point point = new mileage.external.Point();
+        if (this.getMemberStatus().equals("CLEAR")) {
+            DormantMemberCleared dormantMemberCleared = new DormantMemberCleared();
+            BeanUtils.copyProperties(this, dormantMemberCleared);
+            dormantMemberCleared.setMemberStatus("CLEAR-DONE");
+            dormantMemberCleared.publishAfterCommit();
 
-        point.setMemberId(this.getMemberId());
-        point.setMemberStatus("WITHDRAWAL");
+            //Following code causes dependency to external APIs
+            // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
 
-        MemberApplication.applicationContext.getBean(mileage.external.PointService.class).forfeit(point, id);
-    }
+            mileage.external.Member member = new mileage.external.Member();
+            // mappings goes here
+
+            member.setMemberId(this.getMemberId());
+            member.setNickname(this.getNickname());
+            member.setPhoneNo(this.getPhoneNo());
+            member.setMemberStatus("READY");
+
+            DormantmemberApplication.applicationContext.getBean(mileage.external.MemberService.class)
+                    .join(member);
+        }else {
+
+            System.out.println("## 3 ###");
+
+        }
+
+    } 
 ```
 
 - 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 포인트 시스템이 장애가 나면 포인트 소멸도 못받는다는 것을 확인:
