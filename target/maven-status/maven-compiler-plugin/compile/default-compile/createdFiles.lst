@@ -1,0 +1,11 @@
+mileage\config\kafka\KafkaProcessor.class
+mileage\AbstractEvent.class
+mileage\MemberController.class
+mileage\MemberStatusChanged.class
+mileage\MemberWithdrawn.class
+mileage\MemberApplication.class
+mileage\MemberJoined.class
+mileage\Member.class
+mileage\PolicyHandler.class
+mileage\AbstractEvent$1.class
+mileage\MemberRepository.class
